@@ -4,52 +4,69 @@ on:
       - "v*.*.*"
 
 jobs:
-  releas:
-    name: Build release binaries and create releease
-    runs-on: ubuntu-latest
+  build:
+    name: Build
+    strategy:
+      fail-fast: false
+      matrix:
+        job:
+          - { target: x86_64-unknown-linux-musl, binary_name: linux-amd64, os: ubuntu-latest }
+          - { target: x86_64-apple-darwin, binary_name: darwin-amd64, os: macos-latest }
+          - { target: x86_64-pc-windows-gnu, exe: windows-amd64.exe, os: windows-latest }
+    runs-on: ${{ matrix.job.os }}
     steps:
       - name: Get release version
         id: get-release-version
         run: echo "version=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
-      - uses: actions/checkout@v3
-      - name: Install Rust tools
-        uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v2
+      - name: Cache Rust dependencies
+        uses: actions/cache@v1.0.1
         with:
-            toolchain: nightly
-            override: true
-            components: rustc, cargo
-      - name: Create dist/ directory
-        run: mkdir dist
-      - name: Enable Windows builds
-        run: rustup target add x86_64-pc-windows-gnu
-      - name: Install mingw-w64
-        run: sudo apt update && sudo apt install mingw-w64
-      - name: Build release for Windows
-        run: cargo build --target=x86_64-pc-windows-gnu --release
-      - name: Move and rename Windows release
-        run: mv target/x86_64-pc-windows-gnu/release/gh-sizer.exe dist/gh-sizer_$RELEASE_VERSION_windows-amd64.exe
-        env:
-          RELEASE_VERSION: ${{ steps.get-release-version.outputs.version }}
-      - name: Enable macOS builds
-        run: rustup target add x86_64-apple-darwin
-      - name: Build release for macOS
-        run: cargo build --target=x86_64-apple-darwin --release
-      - name: Move and rename macOS release
-        run: mv target/x86_64-apple-darwin/release/gh-sizer dist/gh-sizer_$RELEASE_VERSION_darwin-amd64
-        env:
-          RELEASE_VERSION: ${{ steps.get-release-version.outputs.version }}
-      - name: Enable Linux builds
-        run: rustup target add x86_64-unknown-linux-musl
-      - name: Build release for Linux
-        run: cargo build --target=x86_64-unknown-linux-musl --release
-      - name: Move and rename Linux release
-        run: mv target/x86_64-unknown-linux-musl/release/gh-sizer dist/gh-sizer_$RELEASE_VERSION_linux-amd64
-        env:
-          RELEASE_VERSION: ${{ steps.get-release-version.outputs.version }}
+          path: target
+          key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.OS }}-build-
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          components: rustc, cargo
+          toolchain: nightly
+          override: true
+          target: ${{ matrix.job.target }}
+      - uses: actions-rs/cargo@v1
+        with:
+          use-cross: true
+          args: --release --target=${{ matrix.job.target }} 
+          command: build
+      - name: Rename binary to filename expected by GitHub CLI
+        run: |
+          rm target/${{ matrix.job.target }}/release/name-of-binary.d
+          cp target/${{ matrix.job.target }}/release/name-of-binary* gh-sizer_${{ steps.get-release-version.outputs.version }}_${{ matrix.job.binary_name }}
+      - name: Upload binary
+        uses: actions/upload-artifact@v2
+        with:
+          path: gh-sizer_${{ steps.get-release-version.outputs.version }}_${{ matrix.job.binary_name }}
+  release:
+    name: Create release with binary assets
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Get release version
+        id: get-release-version
+        run: echo "version=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+      - uses: actions/download-artifact@v3
+        with:
+          name: gh-sizer_${{ steps.get-release-version.outputs.version }}_linux-amd64
+      - uses: actions/download-artifact@v3
+        with:
+          name: gh-sizer_${{ steps.get-release-version.outputs.version }}_darwin-amd64
+      - uses: actions/download-artifact@v3
+        with:
+          name: gh-sizer_${{ steps.get-release-version.outputs.version }}_windows-amd64.exe
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/gh-sizer_${{ steps.get-release-version.outputs.version }}_windows-amd64.exe
-            dist/gh-sizer_${{ steps.get-release-version.outputs.version }}_darwin-amd64
-            dist/gh-sizer_${{ steps.get-release-version.outputs.version }}_linux-amd64
+            gh-sizer_${{ steps.get-release-version.outputs.version }}_windows-amd64.exe
+            gh-sizer_${{ steps.get-release-version.outputs.version }}_darwin-amd64
+            gh-sizer_${{ steps.get-release-version.outputs.version }}_linux-amd64

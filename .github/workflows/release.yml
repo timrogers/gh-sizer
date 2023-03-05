@@ -20,18 +20,24 @@ jobs:
             components: rustc, cargo
       - name: Create dist/ directory
         run: mkdir dist
+      - name: Enable Windows builds
+        run: rustup target add x86_64-pc-windows-gnu
       - name: Build release for Windows
         run: cargo build --target=x86_64-pc-windows-gnu --release
       - name: Move and rename Windows release
         run: mv target/x86_64-pc-windows-gnu/release/gh-sizer.exe dist/gh-sizer_$RELEASE_VERSION_windows-amd64.exe
         env:
           RELEASE_VERSION: ${{ steps.get-release-version.outputs.version }}
+      - name: Enable macOS builds
+        run: rustup target add x86_64-apple-darwin
       - name: Build release for macOS
         run: cargo build --target=x86_64-apple-darwin --release
       - name: Move and rename macOS release
         run: mv target/x86_64-apple-darwin/release/gh-sizer dist/gh-sizer_$RELEASE_VERSION_darwin-amd64
         env:
           RELEASE_VERSION: ${{ steps.get-release-version.outputs.version }}
+      - name: Enable Linux builds
+        run: rustup target add x86_64-unknown-linux-musl
       - name: Build release for Linux
         run: cargo build --target=x86_64-unknown-linux-musl --release
       - name: Move and rename Linux release

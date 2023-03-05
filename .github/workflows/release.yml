@@ -15,9 +15,6 @@ jobs:
           - { target: x86_64-pc-windows-msvc, exe: windows-amd64.exe, os: windows-latest }
     runs-on: ${{ matrix.job.os }}
     steps:
-      - name: Get release version
-        id: get-release-version
-        run: echo "version=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - uses: actions/checkout@v2
       - name: Cache Rust dependencies
         uses: actions/cache@v1.0.1
@@ -41,33 +38,30 @@ jobs:
       - name: Rename binary to filename expected by GitHub CLI
         run: |
           rm target/${{ matrix.job.target }}/release/gh-sizer.d
-          cp target/${{ matrix.job.target }}/release/gh-sizer* gh-sizer_${{ steps.get-release-version.outputs.version }}_${{ matrix.job.binary_name }}
+          cp target/${{ matrix.job.target }}/release/gh-sizer* gh-sizer_${{ github.ref_name }}_${{ matrix.job.binary_name }}
       - name: Upload binary
         uses: actions/upload-artifact@v2
         with:
-          path: gh-sizer_${{ steps.get-release-version.outputs.version }}_${{ matrix.job.binary_name }}
-          name: gh-sizer_${{ steps.get-release-version.outputs.version }}_${{ matrix.job.binary_name }}
+          path: gh-sizer_${{ github.ref_name }}_${{ matrix.job.binary_name }}
+          name: gh-sizer_${{ github.ref_name }}_${{ matrix.job.binary_name }}
   release:
     name: Create release with binary assets
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Get release version
-        id: get-release-version
-        run: echo "version=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - uses: actions/download-artifact@v3
         with:
-          name: gh-sizer_${{ steps.get-release-version.outputs.version }}_linux-amd64
+          name: gh-sizer_${{ github.ref_name }}_linux-amd64
       - uses: actions/download-artifact@v3
         with:
-          name: gh-sizer_${{ steps.get-release-version.outputs.version }}_darwin-amd64
+          name: gh-sizer_${{ github.ref_name }}_darwin-amd64
       - uses: actions/download-artifact@v3
         with:
-          name: gh-sizer_${{ steps.get-release-version.outputs.version }}_windows-amd64.exe
+          name: gh-sizer_${{ github.ref_name }}_windows-amd64.exe
       - name: Create release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            gh-sizer_${{ steps.get-release-version.outputs.version }}_windows-amd64.exe
-            gh-sizer_${{ steps.get-release-version.outputs.version }}_darwin-amd64
-            gh-sizer_${{ steps.get-release-version.outputs.version }}_linux-amd64
+            gh-sizer_${{ github.ref_name }}_windows-amd64.exe
+            gh-sizer_${{ github.ref_name }}_darwin-amd64
+            gh-sizer_${{ github.ref_name }}_linux-amd64

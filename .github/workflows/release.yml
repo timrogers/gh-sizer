@@ -1,0 +1,47 @@
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  releas:
+    name: Build release binaries and create releease
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get release version
+        id: get-release-version
+        run: echo "version=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
+      - uses: actions/checkout@v3
+      - name: Install Rust tools
+        uses: actions-rs/toolchain@v1
+        with:
+            toolchain: nightly
+            override: true
+            components: rustc, cargo
+      - name: Create dist/ directory
+        run: mkdir dist
+      - name: Build release for Windows
+        run: cargo build --target=x86_64-pc-windows-gnu --release
+      - name: Move and rename Windows release
+        run: mv target/x86_64-pc-windows-gnu/release/gh-sizer.exe dist/gh-sizer_$RELEASE_VERSION_windows-amd64.exe
+        env:
+          RELEASE_VERSION: ${{ steps.get-release-version.outputs.version }}
+      - name: Build release for macOS
+        run: cargo build --target=x86_64-apple-darwin --release
+      - name: Move and rename macOS release
+        run: mv target/x86_64-apple-darwin/release/gh-sizer dist/gh-sizer_$RELEASE_VERSION_darwin-amd64
+        env:
+          RELEASE_VERSION: ${{ steps.get-release-version.outputs.version }}
+      - name: Build release for Linux
+        run: cargo build --target=x86_64-unknown-linux-musl --release
+      - name: Move and rename Linux release
+        run: mv target/x86_64-unknown-linux-musl/release/gh-sizer dist/gh-sizer_$RELEASE_VERSION_linux-amd64
+        env:
+          RELEASE_VERSION: ${{ steps.get-release-version.outputs.version }}
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/gh-sizer_${{ steps.get-release-version.outputs.version }}_windows-amd64.exe
+            dist/gh-sizer_${{ steps.get-release-version.outputs.version }}_darwin-amd64
+            dist/gh-sizer_${{ steps.get-release-version.outputs.version }}_linux-amd64

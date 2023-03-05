@@ -40,8 +40,8 @@ jobs:
           command: build
       - name: Rename binary to filename expected by GitHub CLI
         run: |
-          rm target/${{ matrix.job.target }}/release/name-of-binary.d
-          cp target/${{ matrix.job.target }}/release/name-of-binary* gh-sizer_${{ steps.get-release-version.outputs.version }}_${{ matrix.job.binary_name }}
+          rm target/${{ matrix.job.target }}/release/gh-sizer.d
+          cp target/${{ matrix.job.target }}/release/gh-sizer* gh-sizer_${{ steps.get-release-version.outputs.version }}_${{ matrix.job.binary_name }}
       - name: Upload binary
         uses: actions/upload-artifact@v2
         with:

@@ -40,7 +40,7 @@ jobs:
           rm target/${{ matrix.job.target }}/release/gh-sizer.d
           cp target/${{ matrix.job.target }}/release/gh-sizer* gh-sizer_${{ github.ref_name }}_${{ matrix.job.binary_name }}
       - name: Upload binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           path: gh-sizer_${{ github.ref_name }}_${{ matrix.job.binary_name }}
           name: gh-sizer_${{ github.ref_name }}_${{ matrix.job.binary_name }}

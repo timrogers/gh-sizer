@@ -3,7 +3,7 @@ use exitcode;
 use tempfile::tempdir;
 
 #[cfg(test)]
-use mockall::{predicate::*};
+use mockall::predicate::*;
 
 use std::io::{Error, ErrorKind};
 use std::process::Command;
@@ -14,9 +14,9 @@ use assert_cmd::prelude::*;
 #[cfg(test)]
 use predicates::prelude::*;
 
-use gh_sizer::generate_script;
 use gh_sizer::enums::Output;
 use gh_sizer::enums::OutputFormat;
+use gh_sizer::generate_script;
 use gh_sizer::github_repository_lister::GitHubRepositoryListerImpl;
 
 #[derive(Debug, Parser)]

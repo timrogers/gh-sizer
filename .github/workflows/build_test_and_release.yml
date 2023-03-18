@@ -34,10 +34,6 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-      - name: Install git-sizer
-        uses: jaxxstorm/action-install-gh-release@v1.10.0
-        with:
-          repo: github/git-sizer
       - name: Run integration tests
         uses: actions-rs/cargo@v1
         with:

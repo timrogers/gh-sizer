@@ -1,0 +1,38 @@
+name: Run integration tests
+
+on: push
+
+jobs:
+  run_integration_tests:
+    name: Run integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3.3.1
+        with:
+          path: target
+          key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.OS }}-build-
+      - name: Install latest Rust nightly
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          components: rustc, cargo
+          toolchain: nightly
+          override: true
+          target: ${{ matrix.job.target }}
+      - name: Run cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+      - name: Run apt-get update
+        run: sudo apt-get update
+      - name: Install git-sizer
+        run: sudo apt-get install git-sizer
+      - name: Run integration tests
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: -- --ignored

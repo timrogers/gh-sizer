@@ -347,6 +347,7 @@ fn generate_script_returns_valid_script() -> Result<(), Box<dyn std::error::Erro
     let bash_command_output = bash_command.output()?;
 
     assert!(bash_command_output.status.success());
+    assert_eq!(String::from_utf8_lossy(&bash_command_output.stdout), "");
 
     insta::assert_yaml_snapshot!(String::from_utf8_lossy(&bash_command_output.stdout));
 

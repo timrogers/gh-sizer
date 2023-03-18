@@ -18,6 +18,3 @@ predicates = "3.0.1"
 
 [profile.dev.package.insta]
 opt-level = 3
-
-[profile.dev.package.similar]
-opt-level = 3

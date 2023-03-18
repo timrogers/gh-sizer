@@ -3,7 +3,19 @@ use exitcode;
 use tempfile::tempdir;
 
 #[cfg(test)]
+use tempfile::NamedTempFile;
+
+#[cfg(test)]
 use mockall::predicate::*;
+
+#[cfg(test)]
+use std::os::unix::fs::PermissionsExt;
+
+#[cfg(test)]
+use std::io::Write;
+
+#[cfg(test)]
+use std::fs;
 
 use std::io::{Error, ErrorKind};
 use std::process::Command;
@@ -14,44 +26,63 @@ use assert_cmd::prelude::*;
 #[cfg(test)]
 use predicates::prelude::*;
 
-use gh_sizer::enums::Output;
 use gh_sizer::enums::OutputFormat;
 use gh_sizer::generate_script;
 use gh_sizer::github_repository_lister::GitHubRepositoryListerImpl;
 
+/// Run `git-sizer` on GitHub repositories without cloning each repository manually
 #[derive(Debug, Parser)]
 #[clap(name = "gh-sizer", version)]
 struct Cli {
+    // Test
     #[clap(subcommand)]
     command: Commands,
 }
 
 #[derive(Debug, Subcommand)]
 enum Commands {
+    /// Run `git-sizer` on a specific repo and output the results to stdout
     Repo {
+        #[clap(
+            help = "The owner and repository name of the repo to size, separated by a slash, e.g. `timrogers/gh-sizer`"
+        )]
         repository: String,
-        #[clap(value_enum, long, short, default_value_t = OutputFormat::Text)]
+        #[clap(value_enum, long, short, default_value_t = OutputFormat::Text, help = "The format to use for the output")]
         output_format: OutputFormat,
-        #[clap(long, short = 't')]
+        // Hidden options are used for testing and may change between versions without notice.
+        #[clap(long, short = 't', hide = true)]
         github_token: Option<String>,
         #[clap(long, hide = true, default_value = "gh")]
         gh_command: String,
     },
+    /// Generate a Bash script to run `git-sizer` on all the repos owned by a user or organization and output the results to stdout or files
     GenerateScript {
-        organization: String,
-        #[clap(value_enum, long, short = 'o', default_value_t = Output::File)]
-        output: Output,
-        #[clap(value_enum, long, short = 'f', default_value_t = OutputFormat::Text)]
+        #[clap(
+            help = "The owner of the repositories you want to size - either a user or an organization"
+        )]
+        owner: String,
+        #[clap(value_enum, long, short = 'f', default_value_t = OutputFormat::Text, help = "The format to use for the output")]
         output_format: OutputFormat,
-        #[clap(long, short = 'd', default_value = "output")]
+        #[clap(
+            long,
+            short = 'd',
+            default_value = "output",
+            help = "The directory to save the output files to"
+        )]
         output_directory: String,
-        #[clap(long, short = 'n', default_value = "${repository}.txt")]
+        #[clap(
+            long,
+            short = 'n',
+            default_value = "${repository}.txt",
+            help = "The filename to use for the output files. Use `${owner}` and `${repository}` to include the owner and repository name in the filename."
+        )]
         output_filename: String,
-        #[clap(long, short = 'c', default_value = "gh sizer")]
+        // Hidden options are used for testing and may change between versions without notice.
+        #[clap(long, short = 'c', default_value = "gh sizer", hide = true)]
         gh_sizer_command: String,
-        #[clap(long, hide = true, default_value = "gh")]
+        #[clap(long, hide = true, default_value = "gh", hide = true)]
         gh_command: String,
-        #[clap(long, short = 't')]
+        #[clap(long, short = 't', hide = true)]
         github_token: Option<String>,
     },
 }
@@ -141,7 +172,7 @@ fn main() {
             gh_command,
             github_token,
         } => {
-            if !command_exists("gh") {
+            if !command_exists(gh_command) {
                 eprintln!("`gh` not found. To use gh-sizer, please install the GitHub CLI (https://cli.github.com).");
                 std::process::exit(exitcode::DATAERR);
             }
@@ -172,8 +203,7 @@ fn main() {
             }
         }
         Commands::GenerateScript {
-            organization,
-            output,
+            owner,
             output_format,
             output_directory,
             output_filename,
@@ -186,14 +216,15 @@ fn main() {
                 std::process::exit(exitcode::DATAERR);
             }
 
-            if !command_succeeds(gh_command, vec!["auth".to_string(), "status".to_string()]) {
+            if github_token.is_none()
+                && !command_succeeds(gh_command, vec!["auth".to_string(), "status".to_string()])
+            {
                 eprintln!("You don't seem to be authenticated with the GitHub CLI, or your current access token is invalid. To authenticate, run `gh auth login`.");
                 std::process::exit(exitcode::DATAERR);
             }
 
             match generate_script::call(
-                organization,
-                output.to_owned(),
+                owner,
                 output_format.to_owned(),
                 output_directory,
                 output_filename,
@@ -215,13 +246,12 @@ fn main() {
     };
 }
 #[test]
+#[ignore]
 fn generate_script_command_errors_without_gh() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gh-sizer")?;
 
     cmd.arg("generate-script")
-        .arg("github")
-        .arg("--output")
-        .arg("stdout")
+        .arg("gh-sizer-sandbox")
         .arg("--output-format")
         .arg("text")
         .arg("--output-directory")
@@ -234,6 +264,158 @@ fn generate_script_command_errors_without_gh() -> Result<(), Box<dyn std::error:
     cmd.assert().failure().stderr(predicate::str::contains(
         "`gh` not found. To use gh-sizer, please install the GitHub CLI (https://cli.github.com)",
     ));
+
+    Ok(())
+}
+
+#[test]
+#[ignore]
+fn generate_script_command_errors_without_authenticated_gh_cli(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("gh-sizer")?;
+
+    cmd.arg("generate-script")
+        .arg("gh-sizer-sandbox")
+        .arg("--output-format")
+        .arg("text")
+        .arg("--output-directory")
+        .arg("output/directory")
+        .arg("--output-filename")
+        .arg("${repository}.txt")
+        .env("GITHUB_TOKEN", "foo");
+
+    let output = cmd.output()?;
+
+    assert!(!output.status.success());
+    insta::assert_yaml_snapshot!(String::from_utf8_lossy(&output.stderr));
+
+    Ok(())
+}
+
+#[test]
+#[ignore]
+fn generate_script_command_returns_script() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("gh-sizer")?;
+
+    cmd.arg("generate-script")
+        .arg("gh-sizer-sandbox")
+        .arg("--output-format")
+        .arg("text")
+        .arg("--output-directory")
+        .arg("output/directory")
+        .arg("--output-filename")
+        .arg("${repository}.txt");
+
+    let output = cmd.output()?;
+
+    assert!(output.status.success());
+    insta::assert_yaml_snapshot!(String::from_utf8_lossy(&output.stdout));
+
+    Ok(())
+}
+
+#[test]
+#[ignore]
+fn generate_script_returns_valid_script() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("gh-sizer")?;
+
+    cmd.arg("generate-script")
+        .arg("gh-sizer-sandbox")
+        .arg("--output-format")
+        .arg("text")
+        .arg("--output-directory")
+        .arg("output/directory")
+        .arg("--output-filename")
+        .arg("${repository}.txt")
+        .arg("--gh-sizer-command")
+        .arg("cargo run --");
+
+    let output = cmd.output()?;
+
+    assert!(output.status.success());
+    let generated_script = String::from_utf8_lossy(&output.stdout);
+
+    println!("{}", generated_script);
+
+    let mut script_file = NamedTempFile::new()?;
+    write!(script_file, "{}", generated_script)?;
+    fs::set_permissions(script_file.path(), fs::Permissions::from_mode(0o755))?;
+
+    let mut bash_command = Command::new("bash");
+    bash_command.arg(script_file.path());
+
+    let bash_command_output = bash_command.output()?;
+
+    assert!(bash_command_output.status.success());
+
+    insta::assert_yaml_snapshot!(String::from_utf8_lossy(&bash_command_output.stdout));
+
+    Ok(())
+}
+
+#[test]
+#[ignore]
+fn repo_command_errors_without_gh() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("gh-sizer")?;
+
+    cmd.arg("repo")
+        .arg("gh-sizer-sandbox/first-repo")
+        .arg("--gh-command")
+        .arg("noop");
+
+    cmd.assert().failure().stderr(predicate::str::contains(
+        "`gh` not found. To use gh-sizer, please install the GitHub CLI (https://cli.github.com)",
+    ));
+
+    Ok(())
+}
+
+#[test]
+#[ignore]
+fn repo_command_errors_without_authenticated_gh_cli() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("gh-sizer")?;
+
+    cmd.arg("repo")
+        .arg("gh-sizer-sandbox/first-repo")
+        .env("GITHUB_TOKEN", "foo");
+
+    let output = cmd.output()?;
+
+    assert!(!output.status.success());
+    insta::assert_yaml_snapshot!(String::from_utf8_lossy(&output.stderr));
+
+    Ok(())
+}
+
+#[test]
+#[ignore]
+fn repo_command_outputs_repo_size_in_text_to_stdout() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("gh-sizer")?;
+
+    cmd.arg("repo").arg("gh-sizer-sandbox/first-repo");
+
+    let output = cmd.output()?;
+
+    assert!(output.status.success());
+    insta::assert_yaml_snapshot!(String::from_utf8_lossy(&output.stdout));
+
+    Ok(())
+}
+
+#[test]
+#[ignore]
+fn repo_command_outputs_repo_size_in_json_to_stdout() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("gh-sizer")?;
+
+    cmd.arg("repo")
+        .arg("gh-sizer-sandbox/first-repo")
+        .arg("--output-format")
+        .arg("json");
+
+    let output = cmd.output()?;
+
+    assert!(output.status.success());
+    insta::assert_yaml_snapshot!(String::from_utf8_lossy(&output.stdout));
 
     Ok(())
 }

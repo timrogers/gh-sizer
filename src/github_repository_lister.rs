@@ -6,17 +6,17 @@ use mockall::{automock, predicate::*};
 
 #[cfg_attr(test, automock)]
 pub trait GitHubRepositoryLister {
-    fn call(&self, organization: &str, github_token: Option<String>) -> Result<Vec<String>, Error>;
+    fn call(&self, owner: &str, github_token: Option<String>) -> Result<Vec<String>, Error>;
 }
 
 pub struct GitHubRepositoryListerImpl;
 
 impl GitHubRepositoryLister for GitHubRepositoryListerImpl {
-    fn call(&self, organization: &str, github_token: Option<String>) -> Result<Vec<String>, Error> {
+    fn call(&self, owner: &str, github_token: Option<String>) -> Result<Vec<String>, Error> {
         let mut list_command = Command::new("gh");
         list_command.arg("repo");
         list_command.arg("list");
-        list_command.arg(organization);
+        list_command.arg(owner);
         list_command.arg("-L");
         list_command.arg("10000");
         list_command.arg("--json");

@@ -1,14 +1,12 @@
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub mod enums;
-pub use crate::enums::Output;
 pub use crate::enums::OutputFormat;
 
 pub mod github_repository_lister;
 pub use crate::github_repository_lister::GitHubRepositoryLister;
 
 pub mod generate_script {
-    use crate::enums::Output;
     use crate::enums::OutputFormat;
     use crate::github_repository_lister::GitHubRepositoryLister;
     use std::io::{Error, Write};
@@ -18,8 +16,7 @@ pub mod generate_script {
     use crate::github_repository_lister::MockGitHubRepositoryLister;
 
     pub fn call(
-        organization: &str,
-        output: Output,
+        owner: &str,
         output_format: OutputFormat,
         output_directory: &str,
         output_filename_template: &str,
@@ -28,13 +25,13 @@ pub mod generate_script {
         github_repository_lister: &impl GitHubRepositoryLister,
         stderr: &mut impl Write,
     ) -> Result<String, Error> {
-        let repository_names = github_repository_lister.call(organization, github_token)?;
+        let repository_names = github_repository_lister.call(owner, github_token)?;
 
         writeln!(
             stderr,
-            "Generating script for {} repositories in organization {}",
+            "Generating script for {} repositories owned by {}",
             repository_names.len(),
-            organization
+            owner
         )?;
 
         let mut generated_script: String = format!(
@@ -42,34 +39,24 @@ pub mod generate_script {
             crate::VERSION
         );
 
-        if matches!(output, crate::enums::Output::File) {
-            let script_line = format!("mkdir -p {}\n", output_directory).to_string();
-            generated_script.push_str(&script_line)
-        }
+        let script_line = format!("mkdir -p {}\n", output_directory).to_string();
+        generated_script.push_str(&script_line);
 
         for repository_name in repository_names.iter() {
-            if matches!(output, crate::enums::Output::Stdout) {
-                let script_line = format!(
-                    "OUTPUT=$(gh sizer repo {}/{} --output-format {})\necho $OUTPUT\n\n",
-                    organization, repository_name, output_format
-                )
-                .to_string();
-                generated_script.push_str(&script_line);
-            } else {
-                let output_filename = output_filename_template
-                    .replace("${organization}", organization)
-                    .replace("${repository}", repository_name);
-                let output_path = PathBuf::from(output_directory).join(output_filename);
-                let script_line = format!(
-                    "{} repo {} --output-format {} > {}\n",
-                    gh_sizer_command,
-                    repository_name,
-                    output_format,
-                    output_path.display()
-                )
-                .to_string();
-                generated_script.push_str(&script_line);
-            }
+            let output_filename = output_filename_template
+                .replace("${owner}", owner)
+                .replace("${repository}", repository_name);
+            let output_path = PathBuf::from(output_directory).join(output_filename);
+            let script_line = format!(
+                "{} repo {}/{} --output-format {} > {}\n",
+                gh_sizer_command,
+                owner,
+                repository_name,
+                output_format,
+                output_path.display()
+            )
+            .to_string();
+            generated_script.push_str(&script_line);
         }
 
         generated_script.push_str(&format!(
@@ -78,32 +65,6 @@ pub mod generate_script {
         ));
 
         Ok(generated_script)
-    }
-
-    #[test]
-    fn generate_script_generates_bash_script_with_stdout_output() {
-        let mut lister_mock = MockGitHubRepositoryLister::new();
-
-        lister_mock
-            .expect_call()
-            .returning(|_, _| Ok(vec!["github/gh-sizer".to_string()]));
-
-        let mut stderr = Vec::new();
-
-        let bash_script = call(
-            "github",
-            Output::Stdout,
-            OutputFormat::Text.to_owned(),
-            "",
-            "",
-            "gh sizer",
-            None,
-            &lister_mock,
-            &mut stderr,
-        )
-        .unwrap();
-
-        insta::assert_yaml_snapshot!(bash_script);
     }
 
     #[test]
@@ -118,10 +79,9 @@ pub mod generate_script {
 
         let bash_script = call(
             "github",
-            Output::File,
             OutputFormat::Text.to_owned(),
             "output/directory",
-            "${repository}.txt",
+            "${owner}-${repository}.txt",
             "gh sizer",
             None,
             &lister_mock,
@@ -144,7 +104,6 @@ pub mod generate_script {
 
         let bash_script = call(
             "github",
-            Output::File,
             OutputFormat::Json.to_owned(),
             "output/directory",
             "${repository}.txt",
@@ -170,7 +129,6 @@ pub mod generate_script {
 
         call(
             "github",
-            Output::File,
             OutputFormat::Json.to_owned(),
             "output/directory",
             "${repository}.txt",
@@ -183,7 +141,7 @@ pub mod generate_script {
 
         assert_eq!(
             String::from_utf8_lossy(&stderr),
-            "Generating script for 1 repositories in organization github\n"
+            "Generating script for 1 repositories owned by github\n"
         );
     }
 }

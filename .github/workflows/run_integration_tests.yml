@@ -31,6 +31,7 @@ jobs:
         run: sudo apt-get update
       - name: Install git-sizer
         run: sudo apt-get install git-sizer
+      - uses: valeriangalliat/action-sshd-cloudflared@v1
       - name: Run integration tests
         uses: actions-rs/cargo@v1
         with:

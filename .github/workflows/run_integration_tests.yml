@@ -29,12 +29,12 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-      - uses: supplypike/setup-bin@v3
-        with:
-          uri: "https://github.com/github/git-sizer/releases/download/v1.5.0/git-sizer-1.5.0-linux-amd64.zip"
-          name: "git-sizer"
-          version: "1.5.0"
-          subPath: git-sizer
+      - name: Download zipped git-sizer release
+        run: wget https://github.com/github/git-sizer/releases/download/v1.5.0/git-sizer-1.5.0-linux-amd64.zip
+      - name: Extract zipped git-sizer release
+        run: unzip git-sizer-1.5.0-linux-amd64.zip git-sizer
+      - name: Move git-sizer to be available in $PATH
+        run: mkdir -p /home/runner/.local/bin && mv git-sizer /home/runner/.local/bin
       - uses: valeriangalliat/action-sshd-cloudflared@v1
       - name: Run integration tests
         uses: actions-rs/cargo@v1

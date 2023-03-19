@@ -29,10 +29,13 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-      - name: Run apt-get update
-        run: sudo apt-get update
       - name: Install git-sizer
-        run: sudo apt-get install git-sizer
+        uses: giantswarm/install-binary-action@v1.1.0
+        with:
+          binary: "git-sizer"
+          version: "1.5.0"
+          download_url: "https://github.com/github/${binary}/releases/download/v${version}/${binary}-${version}-linux-amd64.zip"
+          tarball_binary_path: ${binary}
       - uses: valeriangalliat/action-sshd-cloudflared@v1
       - name: Run integration tests
         uses: actions-rs/cargo@v1

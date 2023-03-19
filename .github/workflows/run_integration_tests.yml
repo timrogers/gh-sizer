@@ -32,6 +32,10 @@ jobs:
       - name: Move git-sizer to be available in $PATH
         run: mkdir -p /home/runner/.local/bin && mv git-sizer /home/runner/.local/bin
       # - uses: valeriangalliat/action-sshd-cloudflared@v1
+      - name: Build with cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
       - name: Run integration tests
         uses: actions-rs/cargo@v1
         with:

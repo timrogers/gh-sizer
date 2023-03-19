@@ -18,8 +18,8 @@ use std::io::Write;
 use std::fs;
 
 use std::io::{Error, ErrorKind};
-use std::process::Command;
 use std::path::Path;
+use std::process::Command;
 
 #[cfg(test)]
 use assert_cmd::prelude::*;
@@ -341,7 +341,8 @@ fn generate_script_returns_valid_script() -> Result<(), Box<dyn std::error::Erro
 
 #[test]
 #[ignore]
-fn generate_script_command_errors_when_output_filename_is_a_path() -> Result<(), Box<dyn std::error::Error>> {
+fn generate_script_command_errors_when_output_filename_is_a_path(
+) -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gh-sizer")?;
 
     cmd.arg("generate-script")

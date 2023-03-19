@@ -19,6 +19,7 @@ use std::fs;
 
 use std::io::{Error, ErrorKind};
 use std::process::Command;
+use std::path::Path;
 
 #[cfg(test)]
 use assert_cmd::prelude::*;
@@ -50,8 +51,6 @@ enum Commands {
         #[clap(value_enum, long, short, default_value_t = OutputFormat::Text, help = "The format to use for the output")]
         output_format: OutputFormat,
         // Hidden options are used for testing and may change between versions without notice.
-        #[clap(long, short = 't', hide = true)]
-        github_token: Option<String>,
         #[clap(long, hide = true, default_value = "gh")]
         gh_command: String,
     },
@@ -74,7 +73,7 @@ enum Commands {
             long,
             short = 'n',
             default_value = "${repository}.txt",
-            help = "The filename to use for the output files. Use `${owner}` and `${repository}` to include the owner and repository name in the filename."
+            help = "The filename to use for the output files. Use `${owner}` and `${repository}` to include the owner and repository name in the filename. This must be a filename, and cannot include a directory."
         )]
         output_filename: String,
         // Hidden options are used for testing and may change between versions without notice.
@@ -82,8 +81,6 @@ enum Commands {
         gh_sizer_command: String,
         #[clap(long, hide = true, default_value = "gh", hide = true)]
         gh_command: String,
-        #[clap(long, short = 't', hide = true)]
-        github_token: Option<String>,
     },
 }
 
@@ -110,11 +107,7 @@ fn command_succeeds(command: &str, args: Vec<String>) -> bool {
     }
 }
 
-fn run_git_sizer_on_repository(
-    nwo: &str,
-    format: OutputFormat,
-    github_token: Option<String>,
-) -> Result<String, Error> {
+fn run_git_sizer_on_repository(nwo: &str, format: OutputFormat) -> Result<String, Error> {
     let temporary_directory = tempdir().expect("Failed to create temporary directory");
     let temporary_directory_path = temporary_directory.path().to_str().unwrap();
 
@@ -128,10 +121,6 @@ fn run_git_sizer_on_repository(
         .arg(temporary_directory_path)
         .arg("--")
         .arg("--bare");
-
-    if github_token.is_some() {
-        clone_command.env("GITHUB_TOKEN", github_token.unwrap().to_string());
-    }
 
     let clone_output = clone_command.output()?;
 
@@ -170,7 +159,6 @@ fn main() {
             repository,
             output_format,
             gh_command,
-            github_token,
         } => {
             if !command_exists(gh_command) {
                 eprintln!("`gh` not found. To use gh-sizer, please install the GitHub CLI (https://cli.github.com).");
@@ -187,11 +175,7 @@ fn main() {
                 std::process::exit(exitcode::DATAERR);
             }
 
-            match run_git_sizer_on_repository(
-                repository,
-                output_format.to_owned(),
-                github_token.to_owned(),
-            ) {
+            match run_git_sizer_on_repository(repository, output_format.to_owned()) {
                 Ok(output) => {
                     println!("{}", output);
                     std::process::exit(exitcode::OK);
@@ -209,17 +193,19 @@ fn main() {
             output_filename,
             gh_sizer_command,
             gh_command,
-            github_token,
         } => {
             if !command_exists(gh_command) {
                 eprintln!("`gh` not found. To use gh-sizer, please install the GitHub CLI (https://cli.github.com).");
                 std::process::exit(exitcode::DATAERR);
             }
 
-            if github_token.is_none()
-                && !command_succeeds(gh_command, vec!["auth".to_string(), "status".to_string()])
-            {
+            if !command_succeeds(gh_command, vec!["auth".to_string(), "status".to_string()]) {
                 eprintln!("You don't seem to be authenticated with the GitHub CLI, or your current access token is invalid. To authenticate, run `gh auth login`.");
+                std::process::exit(exitcode::DATAERR);
+            }
+
+            if Path::new(output_filename).components().count() > 1 {
+                eprintln!("--output-filename must be a filename, not a path");
                 std::process::exit(exitcode::DATAERR);
             }
 
@@ -229,7 +215,6 @@ fn main() {
                 output_directory,
                 output_filename,
                 gh_sizer_command,
-                github_token.to_owned(),
                 &GitHubRepositoryListerImpl {},
                 &mut std::io::stdout(),
             ) {
@@ -350,6 +335,28 @@ fn generate_script_returns_valid_script() -> Result<(), Box<dyn std::error::Erro
     assert_eq!(String::from_utf8_lossy(&bash_command_output.stdout), "");
 
     insta::assert_yaml_snapshot!(String::from_utf8_lossy(&bash_command_output.stdout));
+
+    Ok(())
+}
+
+#[test]
+#[ignore]
+fn generate_script_command_errors_when_output_filename_is_a_path() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin("gh-sizer")?;
+
+    cmd.arg("generate-script")
+        .arg("gh-sizer-sandbox")
+        .arg("--output-format")
+        .arg("text")
+        .arg("--output-directory")
+        .arg("output/directory")
+        .arg("--output-filename")
+        .arg("foo/${repository}.txt");
+
+    let output = cmd.output()?;
+
+    assert!(!output.status.success());
+    insta::assert_yaml_snapshot!(String::from_utf8_lossy(&output.stderr));
 
     Ok(())
 }

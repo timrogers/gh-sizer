@@ -21,11 +21,10 @@ pub mod generate_script {
         output_directory: &str,
         output_filename_template: &str,
         gh_sizer_command: &str,
-        github_token: Option<String>,
         github_repository_lister: &impl GitHubRepositoryLister,
         stderr: &mut impl Write,
     ) -> Result<String, Error> {
-        let repository_names = github_repository_lister.call(owner, github_token)?;
+        let repository_names = github_repository_lister.call(owner)?;
 
         writeln!(
             stderr,
@@ -73,7 +72,7 @@ pub mod generate_script {
 
         lister_mock
             .expect_call()
-            .returning(|_, _| Ok(vec!["gh-sizer".to_string()]));
+            .returning(|_| Ok(vec!["gh-sizer".to_string()]));
 
         let mut stderr = Vec::new();
 
@@ -83,7 +82,6 @@ pub mod generate_script {
             "output/directory",
             "${owner}-${repository}.txt",
             "gh sizer",
-            None,
             &lister_mock,
             &mut stderr,
         )
@@ -98,7 +96,7 @@ pub mod generate_script {
 
         lister_mock
             .expect_call()
-            .returning(|_, _| Ok(vec!["gh-sizer".to_string()]));
+            .returning(|_| Ok(vec!["gh-sizer".to_string()]));
 
         let mut stderr = Vec::new();
 
@@ -108,7 +106,6 @@ pub mod generate_script {
             "output/directory",
             "${repository}.txt",
             "gh sizer",
-            None,
             &lister_mock,
             &mut stderr,
         )
@@ -123,7 +120,7 @@ pub mod generate_script {
 
         lister_mock
             .expect_call()
-            .returning(|_, _| Ok(vec!["gh-sizer".to_string()]));
+            .returning(|_| Ok(vec!["gh-sizer".to_string()]));
 
         let mut stderr = Vec::new();
 
@@ -133,7 +130,6 @@ pub mod generate_script {
             "output/directory",
             "${repository}.txt",
             "gh sizer",
-            None,
             &lister_mock,
             &mut stderr,
         )

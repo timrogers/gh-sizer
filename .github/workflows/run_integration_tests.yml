@@ -24,7 +24,7 @@ jobs:
           components: rustc, cargo
           toolchain: nightly
           override: true
-          target: ${{ matrix.job.target }}ssh-keygen -R action-sshd-cloudflared && echo 'action-sshd-cloudflared ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDiAWADSYEk17cI8iqxus6RuuA8U8AV4JsqG7+1DYs6AfCsZdDN0518orN9Y+0qfvb41rLxxLCuCj+1HEqe08WI6hNqcaBh+R7gn7TceEXdx9aERayke2lFa8Ik2qv2h8wUilGHmMsNwzx0ceh4W8FWtx0YgY/TR/eNRZzqpP2/OSsHHnCi3BZeDcKKtwxBwOUB5jDIA0XLnmf1Wza0ZgYeZtaB842/h+kVjuHv55OTdv71LAwu7Y42H4jTeyJSzE3XHWwNaY52YFcyubiKVT3wq/YtArDaH57JTs8lG0C/gEze3vIF/3O6X4qywUCdodI+oO8xlcXmnijTOUpo23sK9fHSRhaB7lcTTnaGBxgHM/7Ths35cieMrStlTBKg1zQ1EJaoJvx/Ly5WjpS0JFI7gEW3PqJoV0BhEMYxZwbAaszAIBwjuyq9c6IQbTpb3S4AZPQOJbM/nHcz7fgwm+s3KQ+wKfFwabOPjIlqea0iYPp3lvLquSQ7VFV3OLbYWts=' >> ~/.ssh/known_hosts && ssh -o ProxyCommand='cloudflared access tcp --hostname https://exam-speed-worm-girl.trycloudflare.com' runner@action-sshd-cloudflared
+          target: ${{ matrix.job.target }}
       - name: Download zipped git-sizer release
         run: wget https://github.com/github/git-sizer/releases/download/v1.5.0/git-sizer-1.5.0-linux-amd64.zip
       - name: Extract zipped git-sizer release
@@ -36,4 +36,4 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: -- --ignored
+          args: -- --ignored --show-output

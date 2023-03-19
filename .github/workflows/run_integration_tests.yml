@@ -29,13 +29,12 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: build
-      - name: Install git-sizer
-        uses: giantswarm/install-binary-action@v1.1.0
+      - uses: supplypike/setup-bin@v3
         with:
-          binary: "git-sizer"
+          uri: "https://github.com/github/git-sizer/releases/download/v1.5.0/git-sizer-1.5.0-linux-amd64.zip"
+          name: "git-sizer"
           version: "1.5.0"
-          download_url: "https://github.com/github/${binary}/releases/download/v${version}/${binary}-${version}-linux-amd64.zip"
-          tarball_binary_path: ${binary}
+          subPath: git-sizer
       - uses: valeriangalliat/action-sshd-cloudflared@v1
       - name: Run integration tests
         uses: actions-rs/cargo@v1

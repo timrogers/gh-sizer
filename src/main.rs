@@ -267,7 +267,7 @@ fn generate_script_command_errors_without_authenticated_gh_cli(
         .arg("output/directory")
         .arg("--output-filename")
         .arg("${repository}.txt")
-        .env("GITHUB_TOKEN", "foo");
+        .env("GH_TOKEN", "foo");
 
     let output = cmd.output()?;
 
@@ -386,7 +386,7 @@ fn repo_command_errors_without_authenticated_gh_cli() -> Result<(), Box<dyn std:
 
     cmd.arg("repo")
         .arg("gh-sizer-sandbox/first-repo")
-        .env("GITHUB_TOKEN", "foo");
+        .env("GH_TOKEN", "foo");
 
     let output = cmd.output()?;
 

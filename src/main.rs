@@ -303,7 +303,8 @@ fn generate_script_command_returns_script() -> Result<(), Box<dyn std::error::Er
 }
 
 #[test]
-fn generate_script_returns_valid_script() -> Result<(), Box<dyn std::error::Error>> {
+#[cfg(feature = "integration_tests")]
+fn generate_script_command_returns_valid_script() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gh-sizer")?;
 
     cmd.arg("generate-script")

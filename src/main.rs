@@ -3,6 +3,7 @@ use exitcode;
 use tempfile::tempdir;
 
 #[cfg(test)]
+#[cfg(feature = "integration_tests")]
 use tempfile::NamedTempFile;
 
 #[cfg(test)]
@@ -13,6 +14,7 @@ use mockall::predicate::*;
 use std::os::unix::fs::PermissionsExt;
 
 #[cfg(test)]
+#[cfg(feature = "integration_tests")]
 use std::io::Write;
 
 #[cfg(test)]
@@ -24,6 +26,7 @@ use std::path::Path;
 use std::process::Command;
 
 #[cfg(test)]
+#[cfg(feature = "integration_tests")]
 use assert_cmd::prelude::*;
 
 #[cfg(test)]

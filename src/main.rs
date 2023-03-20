@@ -9,6 +9,7 @@ use tempfile::NamedTempFile;
 use mockall::predicate::*;
 
 #[cfg(test)]
+#[cfg(not(target_os = "windows"))]
 use std::os::unix::fs::PermissionsExt;
 
 #[cfg(test)]
@@ -324,7 +325,10 @@ fn generate_script_returns_valid_script() -> Result<(), Box<dyn std::error::Erro
 
     let mut script_file = NamedTempFile::new()?;
     write!(script_file, "{}", generated_script)?;
-    fs::set_permissions(script_file.path(), fs::Permissions::from_mode(0o755))?;
+
+    if !cfg!(windows) {
+        fs::set_permissions(script_file.path(), fs::Permissions::from_mode(0o755))?;
+    }
 
     let mut bash_command = Command::new("bash");
     bash_command.arg(script_file.path());

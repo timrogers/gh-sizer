@@ -1,0 +1,6 @@
+---
+source: src/main.rs
+expression: "String::from_utf8_lossy(&output.stderr)"
+---
+"Cloning gh-sizer-sandbox/first-repo from GitHub...\nHTTP 401: Bad credentials (https://api.github.com/graphql)\nTry authenticating with:  gh auth login\n\n"
+

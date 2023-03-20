@@ -67,6 +67,7 @@ pub mod generate_script {
     }
 
     #[test]
+    #[cfg(not(windows))]
     fn generate_script_generates_bash_script_with_file_output() {
         let mut lister_mock = MockGitHubRepositoryLister::new();
 
@@ -91,6 +92,7 @@ pub mod generate_script {
     }
 
     #[test]
+    #[cfg(not(windows))]
     fn generate_script_generates_bash_script_with_json_formatted_output() {
         let mut lister_mock = MockGitHubRepositoryLister::new();
 

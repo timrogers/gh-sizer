@@ -13,7 +13,7 @@ To run the unit tests, run `cargo test`.
 
 ### Integration tests
 
-To run the integration tests tagged with `#[test] #[ignore]`, run `cargo test -- --ignored`. In order to run the integration tests, the `gh` CLI must be authenticated - you can authenticate by running `gh auth login` or by setting the `GH_TOKEN` environment variable.
+Integration tests are part of the `integration_tests` [feature](https://doc.rust-lang.org/cargo/reference/features.html) and are not compiled and run by default. To run them, compile with `cargo build --features integration_tests` and then test with `cargo test --features integration_tests`. In order to run the integration tests, the `gh` CLI must be authenticated - you can authenticate by running `gh auth login` or by setting the `GH_TOKEN` environment variable.
 
 ### Working with snapshot tests
 

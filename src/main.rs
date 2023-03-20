@@ -9,13 +9,14 @@ use tempfile::NamedTempFile;
 use mockall::predicate::*;
 
 #[cfg(test)]
-#[cfg(not(target_os = "windows"))]
+#[cfg(feature = "integration_tests")]
 use std::os::unix::fs::PermissionsExt;
 
 #[cfg(test)]
 use std::io::Write;
 
 #[cfg(test)]
+#[cfg(feature = "integration_tests")]
 use std::fs;
 
 use std::io::{Error, ErrorKind};
@@ -26,6 +27,7 @@ use std::process::Command;
 use assert_cmd::prelude::*;
 
 #[cfg(test)]
+#[cfg(feature = "integration_tests")]
 use predicates::prelude::*;
 
 use gh_sizer::enums::OutputFormat;
@@ -232,7 +234,7 @@ fn main() {
     };
 }
 #[test]
-#[ignore]
+#[cfg(feature = "integration_tests")]
 fn generate_script_command_errors_without_gh() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gh-sizer")?;
 
@@ -255,7 +257,7 @@ fn generate_script_command_errors_without_gh() -> Result<(), Box<dyn std::error:
 }
 
 #[test]
-#[ignore]
+#[cfg(feature = "integration_tests")]
 fn generate_script_command_errors_without_authenticated_gh_cli(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gh-sizer")?;
@@ -279,7 +281,7 @@ fn generate_script_command_errors_without_authenticated_gh_cli(
 }
 
 #[test]
-#[ignore]
+#[cfg(feature = "integration_tests")]
 fn generate_script_command_returns_script() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gh-sizer")?;
 
@@ -301,7 +303,6 @@ fn generate_script_command_returns_script() -> Result<(), Box<dyn std::error::Er
 }
 
 #[test]
-#[ignore]
 fn generate_script_returns_valid_script() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gh-sizer")?;
 
@@ -326,9 +327,8 @@ fn generate_script_returns_valid_script() -> Result<(), Box<dyn std::error::Erro
     let mut script_file = NamedTempFile::new()?;
     write!(script_file, "{}", generated_script)?;
 
-    if !cfg!(windows) {
-        fs::set_permissions(script_file.path(), fs::Permissions::from_mode(0o755))?;
-    }
+    #[cfg(feature = "integration_tests")]
+    fs::set_permissions(script_file.path(), fs::Permissions::from_mode(0o755))?;
 
     let mut bash_command = Command::new("bash");
     bash_command.arg(script_file.path());
@@ -344,7 +344,7 @@ fn generate_script_returns_valid_script() -> Result<(), Box<dyn std::error::Erro
 }
 
 #[test]
-#[ignore]
+#[cfg(feature = "integration_tests")]
 fn generate_script_command_errors_when_output_filename_is_a_path(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gh-sizer")?;
@@ -367,7 +367,7 @@ fn generate_script_command_errors_when_output_filename_is_a_path(
 }
 
 #[test]
-#[ignore]
+#[cfg(feature = "integration_tests")]
 fn repo_command_errors_without_gh() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gh-sizer")?;
 
@@ -384,7 +384,7 @@ fn repo_command_errors_without_gh() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-#[ignore]
+#[cfg(feature = "integration_tests")]
 fn repo_command_errors_without_authenticated_gh_cli() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gh-sizer")?;
 
@@ -401,7 +401,7 @@ fn repo_command_errors_without_authenticated_gh_cli() -> Result<(), Box<dyn std:
 }
 
 #[test]
-#[ignore]
+#[cfg(feature = "integration_tests")]
 fn repo_command_outputs_repo_size_in_text_to_stdout() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gh-sizer")?;
 
@@ -416,7 +416,7 @@ fn repo_command_outputs_repo_size_in_text_to_stdout() -> Result<(), Box<dyn std:
 }
 
 #[test]
-#[ignore]
+#[cfg(feature = "integration_tests")]
 fn repo_command_outputs_repo_size_in_json_to_stdout() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd = Command::cargo_bin("gh-sizer")?;
 

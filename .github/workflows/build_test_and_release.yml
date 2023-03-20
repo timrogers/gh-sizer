@@ -41,10 +41,12 @@ jobs:
           args: --release --target=${{ matrix.job.target }} 
           command: build
       - name: Rename binary to filename expected by GitHub CLI
+        if: startsWith(github.event.ref, 'refs/tags/v')
         run: |
           rm target/${{ matrix.job.target }}/release/gh-sizer.d
           cp target/${{ matrix.job.target }}/release/gh-sizer* gh-sizer_${{ github.ref_name }}_${{ matrix.job.binary_name }}
       - name: Upload binary
+        if: startsWith(github.event.ref, 'refs/tags/v')
         uses: actions/upload-artifact@v3
         with:
           path: gh-sizer_${{ github.ref_name }}_${{ matrix.job.binary_name }}

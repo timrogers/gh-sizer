@@ -2,7 +2,7 @@
 use std::process::Command;
 
 #[cfg(feature = "windows_integration_tests")]
-use tempfile::NamedTempFile;
+use tempfile::{Builder, NamedTempFile};
 
 #[cfg(feature = "windows_integration_tests")]
 use mockall::predicate::*;
@@ -160,13 +160,24 @@ fn generate_script_command_returns_valid_powershell_script(
 
     println!("{}", generated_script);
 
-    let mut script_file = NamedTempFile::new()?;
+    let mut script_file = Builder::new().suffix(".ps1").tempfile()?;
+
     write!(script_file, "{}", generated_script)?;
 
     let mut pwsh_command = Command::new("pwsh");
     pwsh_command.arg(script_file.path());
 
     let pwsh_command_output = pwsh_command.output()?;
+
+    println!(
+        "STDOUT: {}",
+        String::from_utf8_lossy(&pwsh_command_output.stdout)
+    );
+
+    println!(
+        "STDERR: {}",
+        String::from_utf8_lossy(&pwsh_command_output.stderr)
+    );
 
     assert!(pwsh_command_output.status.success());
     assert_eq!(String::from_utf8_lossy(&pwsh_command_output.stdout), "");

@@ -1,5 +1,5 @@
 ---
-source: src/main.rs
+source: src/linux_integration_tests.rs
 expression: "String::from_utf8_lossy(&output.stderr)"
 ---
 "--output-filename must be a filename, not a path\n"

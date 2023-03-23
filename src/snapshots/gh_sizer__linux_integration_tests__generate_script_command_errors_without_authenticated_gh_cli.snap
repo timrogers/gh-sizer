@@ -1,0 +1,6 @@
+---
+source: src/linux_integration_tests.rs
+expression: "String::from_utf8_lossy(&output.stderr)"
+---
+"HTTP 401: Bad credentials (https://api.github.com/graphql)\nTry authenticating with:  gh auth login\n\n"
+

@@ -1,41 +1,20 @@
 use clap::{Parser, Subcommand};
 use exitcode;
-use tempfile::tempdir;
-
-#[cfg(test)]
-#[cfg(feature = "integration_tests")]
-use tempfile::NamedTempFile;
-
-#[cfg(test)]
-use mockall::predicate::*;
-
-#[cfg(test)]
-#[cfg(feature = "integration_tests")]
-use std::os::unix::fs::PermissionsExt;
-
-#[cfg(test)]
-#[cfg(feature = "integration_tests")]
-use std::io::Write;
-
-#[cfg(test)]
-#[cfg(feature = "integration_tests")]
-use std::fs;
-
 use std::io::{Error, ErrorKind};
 use std::path::Path;
 use std::process::Command;
-
-#[cfg(test)]
-#[cfg(feature = "integration_tests")]
-use assert_cmd::prelude::*;
-
-#[cfg(test)]
-#[cfg(feature = "integration_tests")]
-use predicates::prelude::*;
+use tempfile::tempdir;
 
 use gh_sizer::enums::OutputFormat;
+use gh_sizer::enums::ScriptType;
 use gh_sizer::generate_script;
 use gh_sizer::github_repository_lister::GitHubRepositoryListerImpl;
+
+#[cfg(test)]
+mod windows_integration_tests;
+
+#[cfg(test)]
+mod linux_integration_tests;
 
 /// Run `git-sizer` on GitHub repositories without cloning each repository manually
 #[derive(Debug, Parser)]
@@ -66,6 +45,8 @@ enum Commands {
             help = "The owner of the repositories you want to size - either a user or an organization"
         )]
         owner: String,
+        #[clap(value_enum, long, short = 's', default_value_t = ScriptType::Bash, help = "The type of script to generate")]
+        script_type: ScriptType,
         #[clap(value_enum, long, short = 'f', default_value_t = OutputFormat::Text, help = "The format to use for the output")]
         output_format: OutputFormat,
         #[clap(
@@ -194,6 +175,7 @@ fn main() {
         }
         Commands::GenerateScript {
             owner,
+            script_type,
             output_format,
             output_directory,
             output_filename,
@@ -217,12 +199,13 @@ fn main() {
 
             match generate_script::call(
                 owner,
+                script_type.to_owned(),
                 output_format.to_owned(),
                 output_directory,
                 output_filename,
                 gh_sizer_command,
                 &GitHubRepositoryListerImpl {},
-                &mut std::io::stdout(),
+                &mut std::io::stderr(),
             ) {
                 Ok(output) => {
                     println!("{}", output);
@@ -235,204 +218,4 @@ fn main() {
             }
         }
     };
-}
-#[test]
-#[cfg(feature = "integration_tests")]
-fn generate_script_command_errors_without_gh() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("gh-sizer")?;
-
-    cmd.arg("generate-script")
-        .arg("gh-sizer-sandbox")
-        .arg("--output-format")
-        .arg("text")
-        .arg("--output-directory")
-        .arg("output/directory")
-        .arg("--output-filename")
-        .arg("${repository}.txt")
-        .arg("--gh-command")
-        .arg("noop");
-
-    cmd.assert().failure().stderr(predicate::str::contains(
-        "`gh` not found. To use gh-sizer, please install the GitHub CLI (https://cli.github.com)",
-    ));
-
-    Ok(())
-}
-
-#[test]
-#[cfg(feature = "integration_tests")]
-fn generate_script_command_errors_without_authenticated_gh_cli(
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("gh-sizer")?;
-
-    cmd.arg("generate-script")
-        .arg("gh-sizer-sandbox")
-        .arg("--output-format")
-        .arg("text")
-        .arg("--output-directory")
-        .arg("output/directory")
-        .arg("--output-filename")
-        .arg("${repository}.txt")
-        .env("GH_TOKEN", "foo");
-
-    let output = cmd.output()?;
-
-    assert!(!output.status.success());
-    insta::assert_yaml_snapshot!(String::from_utf8_lossy(&output.stderr));
-
-    Ok(())
-}
-
-#[test]
-#[cfg(feature = "integration_tests")]
-fn generate_script_command_returns_script() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("gh-sizer")?;
-
-    cmd.arg("generate-script")
-        .arg("gh-sizer-sandbox")
-        .arg("--output-format")
-        .arg("text")
-        .arg("--output-directory")
-        .arg("output/directory")
-        .arg("--output-filename")
-        .arg("${repository}.txt");
-
-    let output = cmd.output()?;
-
-    assert!(output.status.success());
-    insta::assert_yaml_snapshot!(String::from_utf8_lossy(&output.stdout));
-
-    Ok(())
-}
-
-#[test]
-#[cfg(feature = "integration_tests")]
-fn generate_script_command_returns_valid_script() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("gh-sizer")?;
-
-    cmd.arg("generate-script")
-        .arg("gh-sizer-sandbox")
-        .arg("--output-format")
-        .arg("text")
-        .arg("--output-directory")
-        .arg("output/directory")
-        .arg("--output-filename")
-        .arg("${repository}.txt")
-        .arg("--gh-sizer-command")
-        .arg("cargo run --");
-
-    let output = cmd.output()?;
-
-    assert!(output.status.success());
-    let generated_script = String::from_utf8_lossy(&output.stdout);
-
-    println!("{}", generated_script);
-
-    let mut script_file = NamedTempFile::new()?;
-    write!(script_file, "{}", generated_script)?;
-
-    #[cfg(feature = "integration_tests")]
-    fs::set_permissions(script_file.path(), fs::Permissions::from_mode(0o755))?;
-
-    let mut bash_command = Command::new("bash");
-    bash_command.arg(script_file.path());
-
-    let bash_command_output = bash_command.output()?;
-
-    assert!(bash_command_output.status.success());
-    assert_eq!(String::from_utf8_lossy(&bash_command_output.stdout), "");
-
-    insta::assert_yaml_snapshot!(String::from_utf8_lossy(&bash_command_output.stdout));
-
-    Ok(())
-}
-
-#[test]
-#[cfg(feature = "integration_tests")]
-fn generate_script_command_errors_when_output_filename_is_a_path(
-) -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("gh-sizer")?;
-
-    cmd.arg("generate-script")
-        .arg("gh-sizer-sandbox")
-        .arg("--output-format")
-        .arg("text")
-        .arg("--output-directory")
-        .arg("output/directory")
-        .arg("--output-filename")
-        .arg("foo/${repository}.txt");
-
-    let output = cmd.output()?;
-
-    assert!(!output.status.success());
-    insta::assert_yaml_snapshot!(String::from_utf8_lossy(&output.stderr));
-
-    Ok(())
-}
-
-#[test]
-#[cfg(feature = "integration_tests")]
-fn repo_command_errors_without_gh() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("gh-sizer")?;
-
-    cmd.arg("repo")
-        .arg("gh-sizer-sandbox/first-repo")
-        .arg("--gh-command")
-        .arg("noop");
-
-    cmd.assert().failure().stderr(predicate::str::contains(
-        "`gh` not found. To use gh-sizer, please install the GitHub CLI (https://cli.github.com)",
-    ));
-
-    Ok(())
-}
-
-#[test]
-#[cfg(feature = "integration_tests")]
-fn repo_command_errors_without_authenticated_gh_cli() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("gh-sizer")?;
-
-    cmd.arg("repo")
-        .arg("gh-sizer-sandbox/first-repo")
-        .env("GH_TOKEN", "foo");
-
-    let output = cmd.output()?;
-
-    assert!(!output.status.success());
-    insta::assert_yaml_snapshot!(String::from_utf8_lossy(&output.stderr));
-
-    Ok(())
-}
-
-#[test]
-#[cfg(feature = "integration_tests")]
-fn repo_command_outputs_repo_size_in_text_to_stdout() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("gh-sizer")?;
-
-    cmd.arg("repo").arg("gh-sizer-sandbox/first-repo");
-
-    let output = cmd.output()?;
-
-    assert!(output.status.success());
-    insta::assert_yaml_snapshot!(String::from_utf8_lossy(&output.stdout));
-
-    Ok(())
-}
-
-#[test]
-#[cfg(feature = "integration_tests")]
-fn repo_command_outputs_repo_size_in_json_to_stdout() -> Result<(), Box<dyn std::error::Error>> {
-    let mut cmd = Command::cargo_bin("gh-sizer")?;
-
-    cmd.arg("repo")
-        .arg("gh-sizer-sandbox/first-repo")
-        .arg("--output-format")
-        .arg("json");
-
-    let output = cmd.output()?;
-
-    assert!(output.status.success());
-    insta::assert_yaml_snapshot!(String::from_utf8_lossy(&output.stdout));
-
-    Ok(())
 }

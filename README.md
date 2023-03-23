@@ -39,7 +39,13 @@ gh sizer repo timrogers/gh-sizer --output-format json
 
 ### Generating a script to size multiple repos
 
-The `gh sizer generate-script` command allows you to generate a Bash script to size all repos belonging to a specific user or organization. Just run the following command, replacing `gh-sizer-sandbox` with the user or organization whose repos you want to size:
+The `gh sizer generate-script` command allows you to generate a Bash or PowerShell script to size all repos belonging to a specific user or organization. 
+
+#### Generating a Bash script
+
+By default, the `generate-script` command generates a Bash script. 
+
+Just run the following command, replacing `gh-sizer-sandbox` with the user or organization whose repos you want to size:
 
 ```bash
 gh sizer generate-script gh-sizer-sandbox
@@ -55,7 +61,30 @@ chmod +x script.sh
 ./script.sh
 ```
 
-By default, the `git-sizer` output will be in human-readable text format. For a machine-readable JSON output, specify the `--output-format json` option:
+### Generating a PowerShell script
+
+You can ask the `generate-script` command to generate a PowerShell script with the `--script-type powershell` argument.
+
+Just run the following command, replacing `gh-sizer-sandbox` with the user or organization whose repos you want to size:
+
+```pwsh
+gh sizer generate-script gh-sizer-sandbox --script-type powershell
+```
+
+The command will print a PowerShell script to STDOUT which will size all of the repos belonging to `gh-sizer-sandbox` and store the results in the `output/` directory, with one file per repo named `${repository}.txt`.
+
+You can store the generated script by piping the output to a file, and then execute it.
+
+```pwsh
+gh sizer generate-script gh-sizer-sandbox >> script.ps1
+.\script.ps1
+```
+
+### Customizing your script
+
+By default, `gh-sizer` will run output one `.txt` file for each repo to `output/${repository.txt}`.
+
+For machine-readable JSON output, specify the `--output-format json` option:
 
 ```bash
 gh sizer generate-script gh-sizer-sandbox --output-format json

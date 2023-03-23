@@ -2,10 +2,10 @@
 use std::process::Command;
 
 #[cfg(feature = "windows_integration_tests")]
-use tempfile::{Builder, NamedTempFile};
+use mockall::predicate::*;
 
 #[cfg(feature = "windows_integration_tests")]
-use mockall::predicate::*;
+use std::fs::File;
 
 #[cfg(feature = "windows_integration_tests")]
 use std::io::Write;
@@ -151,7 +151,7 @@ fn generate_script_command_returns_valid_powershell_script(
         .arg("--script-type")
         .arg("powershell")
         .arg("--gh-sizer-command")
-        .arg("cargo run --");
+        .arg("target\\debug\\gh-sizer.exe");
 
     let output = cmd.output()?;
 
@@ -160,12 +160,12 @@ fn generate_script_command_returns_valid_powershell_script(
 
     println!("{}", generated_script);
 
-    let mut script_file = Builder::new().suffix(".ps1").tempfile()?;
-
+    let mut script_file = File::create("migrate.ps1")?;
     write!(script_file, "{}", generated_script)?;
+    drop(script_file);
 
     let mut pwsh_command = Command::new("pwsh");
-    pwsh_command.arg(script_file.path());
+    pwsh_command.arg("migrate.ps1");
 
     let pwsh_command_output = pwsh_command.output()?;
 

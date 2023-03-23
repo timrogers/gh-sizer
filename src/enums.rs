@@ -14,3 +14,18 @@ impl fmt::Display for OutputFormat {
         }
     }
 }
+
+#[derive(clap::ValueEnum, Clone, Debug)]
+pub enum ScriptType {
+    Bash,
+    Powershell,
+}
+
+impl fmt::Display for ScriptType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ScriptType::Bash => write!(f, "bash"),
+            ScriptType::Powershell => write!(f, "powershell"),
+        }
+    }
+}

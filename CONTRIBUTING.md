@@ -5,7 +5,7 @@
 `gh sizer` is tested with:
 
 * unit tests run across macOS, Linux and Windows
-* integration tests run against the `gh-sizer` binary in a Linux environment
+* integration tests run against the `gh-sizer` binary on Linux and Windows
 
 ### Unit tests
 
@@ -13,7 +13,21 @@ To run the unit tests, run `cargo test`.
 
 ### Integration tests
 
-Integration tests are part of the `integration_tests` [feature](https://doc.rust-lang.org/cargo/reference/features.html) and are not compiled and run by default. To run them, compile with `cargo build --features integration_tests` and then test with `cargo test --features integration_tests`. In order to run the integration tests, the `gh` CLI must be authenticated - you can authenticate by running `gh auth login` or by setting the `GH_TOKEN` environment variable.
+Integration tests are part of the `windows_integration_tests` and `linux_integration_tests` [feature](https://doc.rust-lang.org/cargo/reference/features.html) and are not compiled and run by default. 
+
+To run the Linux integration tests:
+
+* Download the source on a Linux machine
+* Compile with `cargo build --features linux_integration_tests`
+* Test with `cargo test --features linux_integration_tests`
+
+To run the Windows integration tests:
+
+* Download the source on a Windows machine
+* Compile with `cargo build --features windows_integration_tests`
+* Test with `cargo test --features windows_integration_tests`
+
+In order to run the integration tests, the `gh` CLI must be authenticated - you can authenticate by running `gh auth login` or by setting the `GH_TOKEN` environment variable.
 
 ### Working with snapshot tests
 

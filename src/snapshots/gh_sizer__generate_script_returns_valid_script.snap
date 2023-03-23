@@ -1,6 +1,0 @@
----
-source: src/main.rs
-expression: "String::from_utf8_lossy(&bash_command_output.stdout)"
----
-""
-

@@ -20,4 +20,5 @@ predicates = "3.0.1"
 opt-level = 3
 
 [features]
-integration_tests = []
+windows_integration_tests = []
+linux_integration_tests = []

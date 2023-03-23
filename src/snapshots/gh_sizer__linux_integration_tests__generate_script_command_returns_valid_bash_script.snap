@@ -1,5 +1,5 @@
 ---
-source: src/main.rs
+source: src/linux_integration_tests.rs
 expression: "String::from_utf8_lossy(&bash_command_output.stdout)"
 ---
 ""

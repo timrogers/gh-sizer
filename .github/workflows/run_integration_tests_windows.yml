@@ -1,11 +1,11 @@
-name: Run integration tests
+name: Run integration tests (Windows)
 
 on: push
 
 jobs:
   run_integration_tests:
     name: Run integration tests
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
@@ -26,19 +26,21 @@ jobs:
           override: true
           target: ${{ matrix.job.target }}
       - name: Download zipped git-sizer release
-        run: wget https://github.com/github/git-sizer/releases/download/v1.5.0/git-sizer-1.5.0-linux-amd64.zip
+        run: Invoke-WebRequest -Uri https://github.com/github/git-sizer/releases/download/v1.5.0/git-sizer-1.5.0-windows-amd64.zip -OutFile git-sizer-1.5.0-windows-amd64.zip
+      - name: Create git-sizer directory to store binary
+        run: New-Item -Name "git-sizer" -ItemType "directory"
       - name: Extract zipped git-sizer release
-        run: unzip git-sizer-1.5.0-linux-amd64.zip git-sizer
-      - name: Move git-sizer to be available in $PATH
-        run: mkdir -p /home/runner/.local/bin && mv git-sizer /home/runner/.local/bin
-      # - uses: valeriangalliat/action-sshd-cloudflared@v1
+        run: Expand-Archive git-sizer-1.5.0-windows-amd64.zip -DestinationPath git-sizer
+      - name: Make git-sizer available in $PATH
+        run: |
+          "D:\a\gh-sizer\gh-sizer\git-sizer" >> $env:GITHUB_PATH
       - name: Build with cargo build
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --features integration_tests
+          args: --features windows_integration_tests
       - name: Run integration tests
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --features integration_tests -- --show-output
+          args: --features windows_integration_tests -- --show-output

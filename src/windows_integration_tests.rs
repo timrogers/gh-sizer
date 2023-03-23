@@ -180,7 +180,7 @@ fn generate_script_command_returns_valid_powershell_script(
     );
 
     assert!(pwsh_command_output.status.success());
-    assert_eq!(String::from_utf8_lossy(&pwsh_command_output.stdout), "");
+    assert_eq!(String::from_utf8_lossy(&pwsh_command_output.stdout), "Processing repo gh-sizer-sandbox/second-repo (1/2)\r\nProcessing repo gh-sizer-sandbox/first-repo (2/2)\r\n");
 
     Ok(())
 }

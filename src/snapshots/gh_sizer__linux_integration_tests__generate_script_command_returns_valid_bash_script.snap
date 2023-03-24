@@ -2,5 +2,5 @@
 source: src/linux_integration_tests.rs
 expression: "String::from_utf8_lossy(&bash_command_output.stdout)"
 ---
-""
+"Processing repo gh-sizer-sandbox/second-repo (1/2)\nProcessing repo gh-sizer-sandbox/first-repo (2/2)\n"
 

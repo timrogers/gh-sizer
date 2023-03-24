@@ -37,13 +37,19 @@ pub mod generate_script {
         .to_string();
         generated_script.push_str(&script_line);
 
-        for repository_name in repository_names.iter() {
+        let repos_count = repository_names.len();
+
+        for (index, repository_name) in repository_names.iter().enumerate() {
             let output_filename = output_filename_template
                 .replace("${owner}", owner)
                 .replace("${repository}", repository_name);
             let output_path = PathBuf::from(output_directory).join(output_filename);
-            let script_line = format!(
-                "{} repo {}/{} --output-format {} | Out-File -Path {}\n",
+            let script_lines = format!(
+                "Write-Output \"Processing repo {}/{} ({}/{})\"\n{} repo {}/{} --output-format {} | Out-File -Path {}\n",
+                owner,
+                repository_name,
+                index + 1,
+                repos_count,
                 gh_sizer_command,
                 owner,
                 repository_name,
@@ -51,7 +57,7 @@ pub mod generate_script {
                 output_path.display()
             )
             .to_string();
-            generated_script.push_str(&script_line);
+            generated_script.push_str(&script_lines);
         }
 
         generated_script.push_str(&format!(
@@ -78,13 +84,19 @@ pub mod generate_script {
         let script_line = format!("mkdir -p {}\n", output_directory).to_string();
         generated_script.push_str(&script_line);
 
-        for repository_name in repository_names.iter() {
+        let repos_count = repository_names.len();
+
+        for (index, repository_name) in repository_names.iter().enumerate() {
             let output_filename = output_filename_template
                 .replace("${owner}", owner)
                 .replace("${repository}", repository_name);
             let output_path = PathBuf::from(output_directory).join(output_filename);
-            let script_line = format!(
-                "{} repo {}/{} --output-format {} > {}\n",
+            let script_lines = format!(
+                "echo \"Processing repo {}/{} ({}/{})\"\n{} repo {}/{} --output-format {} > {}\n",
+                owner,
+                repository_name,
+                index + 1,
+                repos_count,
                 gh_sizer_command,
                 owner,
                 repository_name,
@@ -92,7 +104,7 @@ pub mod generate_script {
                 output_path.display()
             )
             .to_string();
-            generated_script.push_str(&script_line);
+            generated_script.push_str(&script_lines);
         }
 
         generated_script.push_str(&format!(

@@ -175,8 +175,6 @@ fn generate_script_command_returns_valid_bash_script() -> Result<(), Box<dyn std
     let bash_command_output = bash_command.output()?;
 
     assert!(bash_command_output.status.success());
-    assert_eq!(String::from_utf8_lossy(&bash_command_output.stdout), "");
-
     insta::assert_yaml_snapshot!(String::from_utf8_lossy(&bash_command_output.stdout));
 
     Ok(())

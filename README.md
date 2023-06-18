@@ -2,7 +2,7 @@
 
 `gh sizer` is an extension for the [GitHub CLI](https://cli.github.com/) which makes it easy to size one or more GitHub repos with [`git-sizer`](https://github.com/github/git-sizer) without having to clone the repo(s) manually.
 
-## Prerequities
+## Prerequisites
 
 To use `gh sizer`, you must already have the following dependencies available in your `$PATH`:
 

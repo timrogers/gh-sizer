@@ -93,5 +93,5 @@ gh sizer generate-script gh-sizer-sandbox --output-format json
 You can customise the directory where the script saves its output and the filenames used with the `--output-directory` and `--output-filename` arguments. In the `--output-filename` argument, you can use `${owner}` and `${repository}` as placeholders for the owner and repository name:
 
 ```bash
-gh sizer generate-script gh-sizer-sandbox --output-directory results --output-filename "${owner}-${repository}.txt"
+gh sizer generate-script gh-sizer-sandbox --output-directory results --output-filename "\${owner}-\${repository}.txt"
 ```

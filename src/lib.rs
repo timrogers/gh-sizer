@@ -10,6 +10,7 @@ pub mod generate_script {
     use crate::enums::OutputFormat;
     use crate::enums::ScriptType;
     use crate::github_repository_lister::GitHubRepositoryLister;
+    use path_slash::PathBufExt as _;
     use std::io::{Error, Write};
     use std::path::PathBuf;
 
@@ -91,6 +92,7 @@ pub mod generate_script {
                 .replace("${owner}", owner)
                 .replace("${repository}", repository_name);
             let output_path = PathBuf::from(output_directory).join(output_filename);
+            let output_path_for_bash = output_path.to_slash().unwrap();
             let script_lines = format!(
                 "echo \"Processing repo {}/{} ({}/{})\"\n{} repo {}/{} --output-format {} > {}\n",
                 owner,
@@ -101,7 +103,7 @@ pub mod generate_script {
                 owner,
                 repository_name,
                 output_format,
-                output_path.display()
+                output_path_for_bash
             )
             .to_string();
             generated_script.push_str(&script_lines);

@@ -57,13 +57,13 @@ jobs:
     needs: build
     if: startsWith(github.event.ref, 'refs/tags/v')
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: gh-sizer_${{ github.ref_name }}_linux-amd64
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: gh-sizer_${{ github.ref_name }}_darwin-amd64
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           name: gh-sizer_${{ github.ref_name }}_windows-amd64.exe
       - name: Create release

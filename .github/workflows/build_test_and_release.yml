@@ -47,7 +47,7 @@ jobs:
           cp target/${{ matrix.job.target }}/release/gh-sizer* gh-sizer_${{ github.ref_name }}_${{ matrix.job.binary_name }}
       - name: Upload binary
         if: startsWith(github.event.ref, 'refs/tags/v')
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           path: gh-sizer_${{ github.ref_name }}_${{ matrix.job.binary_name }}
           name: gh-sizer_${{ github.ref_name }}_${{ matrix.job.binary_name }}

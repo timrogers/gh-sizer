@@ -9,7 +9,7 @@ edition = "2021"
 clap = { version = "4.5.0", features = ["derive"] }
 exitcode = "1.1.2"
 path-slash = "0.2.1"
-tempfile = "3.9.0"
+tempfile = "3.10.0"
 
 [dev-dependencies]
 assert_cmd = "2.0.13"

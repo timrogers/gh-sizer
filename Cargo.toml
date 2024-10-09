@@ -14,7 +14,7 @@ tempfile = "3.10.1"
 [dev-dependencies]
 assert_cmd = "2.0.14"
 insta = { version = "1.40.0", features = ["yaml"] }
-mockall = "0.12.1"
+mockall = "0.13.0"
 predicates = "3.1.2"
 
 [profile.dev.package.insta]

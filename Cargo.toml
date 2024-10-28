@@ -13,7 +13,7 @@ tempfile = "3.10.1"
 
 [dev-dependencies]
 assert_cmd = "2.0.16"
-insta = { version = "1.40.0", features = ["yaml"] }
+insta = { version = "1.41.0", features = ["yaml"] }
 mockall = "0.13.0"
 predicates = "3.1.2"
 

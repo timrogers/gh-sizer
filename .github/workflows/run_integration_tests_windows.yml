@@ -17,14 +17,8 @@ jobs:
           key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.OS }}-build-
-      - name: Install latest Rust nightly
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          components: rustc, cargo
-          toolchain: nightly
-          override: true
-          target: ${{ matrix.job.target }}
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
       - name: Download zipped git-sizer release
         run: Invoke-WebRequest -Uri https://github.com/github/git-sizer/releases/download/v1.5.0/git-sizer-1.5.0-windows-amd64.zip -OutFile git-sizer-1.5.0-windows-amd64.zip
       - name: Create git-sizer directory to store binary
@@ -35,12 +29,6 @@ jobs:
         run: |
           "D:\a\gh-sizer\gh-sizer\git-sizer" >> $env:GITHUB_PATH
       - name: Build with cargo build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --features windows_integration_tests
+        run: cargo build --features windows_integration_tests
       - name: Run integration tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --features windows_integration_tests -- --show-output
+        run: cargo test --features windows_integration_tests -- --show-output

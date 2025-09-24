@@ -22,24 +22,14 @@ jobs:
           key: ${{ runner.OS }}-build-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.OS }}-build-
-      - name: Install latest Rust nightly
-        uses: actions-rs/toolchain@v1
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          profile: minimal
-          components: rustc, cargo
-          toolchain: nightly
-          override: true
-          target: ${{ matrix.job.target }}
+          targets: ${{ matrix.job.target }}
       - name: Run unit tests
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
+        run: cargo test
       - name: Run cargo build --release
-        uses: actions-rs/cargo@v1
-        with:
-          use-cross: true
-          args: --release --target=${{ matrix.job.target }} 
-          command: build
+        run: cargo build --release --target=${{ matrix.job.target }}
       - name: Rename binary to filename expected by GitHub CLI
         if: startsWith(github.event.ref, 'refs/tags/v')
         run: |
